@@ -1,11 +1,11 @@
-# MikeCraft Legal
+﻿# MikeCraft Legal
 
 Public Terms of Service and Privacy Policy for TikTok / developer app registration.
 
-## Live URLs (GitHub Pages)
+## Live URLs
 
-After Pages is enabled:
+- Home: https://iamgrim-hash.github.io/mikecraft-legal/
+- Terms of Service: https://iamgrim-hash.github.io/mikecraft-legal/terms.html
+- Privacy Policy: https://iamgrim-hash.github.io/mikecraft-legal/privacy.html
 
-- Home: `https://<github-username>.github.io/mikecraft-legal/`
-- Terms: `https://<github-username>.github.io/mikecraft-legal/terms.html`
-- Privacy: `https://<github-username>.github.io/mikecraft-legal/privacy.html`
+Repo: https://github.com/IAmGrim-hash/mikecraft-legal
