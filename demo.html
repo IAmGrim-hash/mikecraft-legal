@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MikeCraft — TikTok Publish Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .brand { color: var(--accent); font-weight: 700; letter-spacing: 0.04em; }
+    .panel {
+      background: linear-gradient(180deg, #1f2430, #181b24);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .thumb {
+      width: 180px; height: 320px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #4caf50, #2f6b38 55%, #8b5a2b 55%);
+      display: flex; align-items: end; justify-content: center;
+      padding: 1rem; color: white; font-weight: 700; text-align: center;
+      border: 1px solid #3a7d44;
+    }
+    .meta { flex: 1; min-width: 240px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: #5b8c3e; color: #0b120c; border: 0; border-radius: 8px;
+      padding: 0.7rem 1.1rem; font-weight: 700; cursor: pointer;
+    }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .steps { display: grid; gap: 0.5rem; margin: 1rem 0; }
+    .step {
+      padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--line);
+      color: var(--muted); background: #0e1016;
+    }
+    .step.active { border-color: #7cffb2; color: var(--accent); }
+    .step.done { border-color: #5b8c3e; color: #cfe9d4; }
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      display: none; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-bg.show { display: flex; }
+    .modal {
+      width: min(420px, 100%); background: #111; border: 1px solid #333;
+      border-radius: 12px; padding: 1.25rem; color: #fff;
+    }
+    .tt { color: #fe2c55; font-weight: 800; }
+    .scopes { font-size: 0.9rem; color: #bbb; margin: 0.75rem 0 1rem; }
+    .status { min-height: 1.4rem; color: var(--accent); margin-top: 0.75rem; }
+    code { color: #7cffb2; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">MIKECRAFT STUDIO</div>
+      <div style="color:var(--muted);font-size:0.85rem">Desktop publish demo · Content Posting API</div>
+    </div>
+
+    <div class="panel">
+      <h1 style="margin:0 0 0.5rem;font-size:1.6rem;color:#fff">Publish Minecraft tutorial to TikTok</h1>
+      <p style="margin:0;color:var(--muted)">End-to-end sandbox flow: Login Kit authorization → Content Posting API upload.</p>
+    </div>
+
+    <div class="panel row">
+      <div class="thumb">First Night<br/>Tutorial</div>
+      <div class="meta">
+        <h2 style="margin:0 0 0.4rem;color:#fff">Survive Your First Night</h2>
+        <p style="margin:0 0 0.75rem;color:var(--muted)">Vertical 9:16 export ready · approved in MikeCraft queue</p>
+        <p style="margin:0 0 1rem;color:var(--muted)">Domain: <code>iamgrim-hash.github.io/mikecraft-legal</code></p>
+        <button class="btn" id="publishBtn" type="button">Publish to TikTok</button>
+        <button class="btn secondary" id="resetBtn" type="button">Reset demo</button>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin:0 0 0.75rem;color:#fff">Integration steps</h3>
+      <div class="steps" id="steps">
+        <div class="step" data-step="1">1. User opens finished tutorial in MikeCraft</div>
+        <div class="step" data-step="2">2. User clicks Publish to TikTok</div>
+        <div class="step" data-step="3">3. Login Kit: authorize MikeCraft</div>
+        <div class="step" data-step="4">4. Grant Content Posting scopes</div>
+        <div class="step" data-step="5">5. Content Posting API uploads video</div>
+        <div class="step" data-step="6">6. Success: draft/post created on TikTok</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="oauthModal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="tt">TikTok</div>
+      <h3 style="margin:0.4rem 0">Authorize MikeCraft</h3>
+      <p class="scopes">
+        MikeCraft is requesting:<br/>
+        • Login Kit (user identity)<br/>
+        • Content Posting API (upload videos you create)
+      </p>
+      <button class="btn" id="authorizeBtn" type="button">Authorize</button>
+      <button class="btn secondary" id="cancelBtn" type="button" style="margin-left:0.5rem">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    const steps = [...document.querySelectorAll('.step')];
+    const status = document.getElementById('status');
+    const modal = document.getElementById('oauthModal');
+    const publishBtn = document.getElementById('publishBtn');
+
+    function setStep(n) {
+      steps.forEach((el) => {
+        const id = Number(el.dataset.step);
+        el.classList.toggle('active', id === n);
+        el.classList.toggle('done', id < n);
+      });
+    }
+
+    function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+    async function runFlow() {
+      publishBtn.disabled = true;
+      setStep(1); status.textContent = 'Opening project…';
+      await sleep(700);
+      setStep(2); status.textContent = 'Starting TikTok publish…';
+      await sleep(600);
+      setStep(3);
+      modal.classList.add('show');
+      status.textContent = 'Waiting for Login Kit authorization…';
+    }
+
+    document.getElementById('authorizeBtn').onclick = async () => {
+      modal.classList.remove('show');
+      setStep(4); status.textContent = 'Scopes granted: video.upload / content posting';
+      await sleep(900);
+      setStep(5); status.textContent = 'Uploading via Content Posting API (sandbox)…';
+      await sleep(1400);
+      setStep(6); status.textContent = 'Success — video sent to TikTok inbox/draft for review.';
+      publishBtn.disabled = false;
+    };
+
+    document.getElementById('cancelBtn').onclick = () => {
+      modal.classList.remove('show');
+      status.textContent = 'Authorization cancelled.';
+      publishBtn.disabled = false;
+    };
+
+    document.getElementById('resetBtn').onclick = () => {
+      modal.classList.remove('show');
+      steps.forEach((el) => el.classList.remove('active', 'done'));
+      status.textContent = '';
+      publishBtn.disabled = false;
+    };
+
+    publishBtn.onclick = runFlow;
+
+    // Auto-run once for unattended demo recordings
+    const params = new URLSearchParams(location.search);
+    if (params.get('auto') === '1') {
+      setTimeout(async () => {
+        await runFlow();
+        setTimeout(() => document.getElementById('authorizeBtn').click(), 1200);
+      }, 800);
+    }
+  </script>
+</body>
+</html>
